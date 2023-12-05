@@ -2,6 +2,8 @@ package br.unb.cic.oberon.ir.ast
 
 import br.unb.cic.oberon.visitor.OberonVisitor
 import br.unb.cic.oberon.environment.Environment
+
+import scala.collection.mutable
 import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
 
@@ -168,6 +170,8 @@ case object NullValue extends Value {
   type T = Unit
   def value: T = ()
 }
+
+case class RecordValue(value: mutable.Map[String, Expression]) extends Value { type T = mutable.Map[String, Expression] }
 
 case class Location(loc: Int) extends Expression
 case class Brackets(exp: Expression) extends Expression

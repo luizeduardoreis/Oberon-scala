@@ -1,8 +1,9 @@
 package br.unb.cic.oberon.environment
 
-import br.unb.cic.oberon.ir.ast.{Expression, Location, NullType, NullValue, Procedure, ReferenceToUserDefinedType, Statement, Type, UserDefinedType}
+import br.unb.cic.oberon.ir.ast.{Expression, Location, NullType, NullValue, Procedure, RecordValue, ReferenceToUserDefinedType, Statement, Type, UserDefinedType, VariableDeclaration}
 import org.jline.builtins.Completers.CompletionEnvironment
 
+import scala.collection.mutable
 import scala.collection.mutable.{Map, Stack}
 
 case class MetaStmt(f: Environment[Expression] => Statement) extends Statement
@@ -42,9 +43,28 @@ class Environment[T](private val top_loc:Int = 0,
     // ponteiro sem NEW não tem location, inicia com NULL
     // global é map para location, qual seria o NULL de location? location(-1)?
     // alterar esse valor default no Interpreter, pointerAssignment(...)
-    return new Environment[T](top_loc = this.top_loc,
-      locations = this.locations,
-      global = this.global + (name -> Location(-1)),
+    return new Environment[T](top_loc = this.top_loc+1,
+      locations = this.locations+(Location(top_loc) -> value),
+      global = this.global + (name -> Location(top_loc)),
+      procedures = this.procedures,
+      userDefinedTypes = this.userDefinedTypes,
+      stack = this.stack
+    )
+  }
+
+  def declareGlobalRecord(name: String, attributes: List[VariableDeclaration], value: Expression): Environment[T] = {
+    var attributesMap = mutable.Map.empty[String, Expression]
+    attributes.foreach(a => attributesMap = attributesMap + (a.name -> value))
+
+    val newGlobal = global.clone()
+    newGlobal(name) = Location(this.top_loc)
+
+    val newLocations = locations.clone()
+    newLocations(Location(this.top_loc)) = new RecordValue(attributesMap)
+
+    return new Environment[T](top_loc = this.top_loc + 1,
+      locations = newLocations,
+      global = newGlobal,
       procedures = this.procedures,
       userDefinedTypes = this.userDefinedTypes,
       stack = this.stack
@@ -159,6 +179,10 @@ class Environment[T](private val top_loc:Int = 0,
       userDefinedTypes = this.userDefinedTypes,
       stack = this.stack
     )
+
+  }
+
+  def setRecordAttribute(recName : String, atrName : String, value : T): Unit = {
 
   }
 
